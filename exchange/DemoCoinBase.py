@@ -19,8 +19,11 @@ class DemoCoinBase(Coinbase):
             print (key, "=>", len(val))
             self.candles[key] = sorted(val, key=itemgetter(0))
 
+    def getObject(self, product_id):
+        return self.candles[product_id][self.priceCount]
+
     def getTime(self):
-        return self.priceCount #self.candles[self.requestedProductId][self.priceCount][0]
+        return self.candles[self.requestedProductId][self.priceCount][0]
 
     def getBalance(self, currency):
         return float(100.0)

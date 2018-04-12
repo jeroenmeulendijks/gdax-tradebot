@@ -7,8 +7,11 @@ class Exchange(object):
         # exchange: low-level interface to exchange
         self.cb = exchange
 
+    def getObject(self, product_id):
+        return self.cb.getObject(product_id)
+
     def getTime(self):
-        return self.cb.getTime()#datetime.datetime.fromtimestamp(self.cb.getTime()).strftime('%Y-%m-%d %H:%M:%S')
+        return datetime.datetime.fromtimestamp(self.cb.getTime()).strftime('%Y-%m-%d %H:%M:%S')
 
     def getBalance(self, currency):
         return self.cb.getBalance(currency)

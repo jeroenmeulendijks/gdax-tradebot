@@ -99,3 +99,7 @@ ENV/
 
 # mypy
 .mypy_cache/
+
+# Custom project files to ignore
+price.csv
+config.py

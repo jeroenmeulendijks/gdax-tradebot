@@ -3,7 +3,7 @@ from model.TimedThread import *
 
 # Custom settings
 LOOP_DURATION = 0.5 # 60 # Time period (in seconds)
-MAX_LOOP_TIME = 70 # 120 # 10 * 60 * 60 # Max duration to run (in seconds)
+MAX_LOOP_TIME = 60 # 120 # 10 * 60 * 60 # Max duration to run (in seconds)
 QUOTE_CURRENCY = "BTC" # Cryptocurrency of choice
 BASE_CURRENCY = "EUR" # Fiat currency of choice
 CSV_PRICE = "price.csv" # Price CSV name

@@ -21,15 +21,20 @@ class Model(object):
         # Get current price and time and add to dataframe
         self.ema_dataframe = self.ema_dataframe.append(pd.DataFrame({'datetime': datetime, 'price': price}, index=[0]), ignore_index=True)
         length = self.ema_dataframe.shape[0]
-        if (length > 5):
-            self.ema_dataframe['EMA5'] = self.ema_dataframe['price'].dropna().shift().fillna(self.ema_dataframe['EMA5']).ewm(com=5).mean()
-        if (length > 20):
-            self.ema_dataframe['EMA20'] = self.ema_dataframe['price'].dropna().shift().fillna(self.ema_dataframe['EMA20']).ewm(com=20).mean()
+
+        if (length >= 5):
+            self.ema_dataframe['EMA5'] = self.ema_dataframe['price'].dropna().shift().fillna(self.ema_dataframe['EMA5']).ewm(com=5,min_periods=4).mean()
+
+        if (length >= 20):
+            self.ema_dataframe['EMA20'] = self.ema_dataframe['price'].dropna().shift().fillna(self.ema_dataframe['EMA20']).ewm(com=20,min_periods=19).mean()
+
+        self.calculateRSI(14)
 
     def calculateRSI(self, period):
         # Calculate RSI and add to dataframe
         length = self.ema_dataframe.shape[0]
-        if (length > period):
+
+        if (length >= period):
             delta = self.ema_dataframe['price'].dropna().apply(float).diff()
             dUp, dDown = delta.copy(), delta.copy()
             dUp[dUp < 0] = 0

@@ -83,5 +83,4 @@ class TimedThread(Thread):
     def EMACrossover(self):
         # Trigger order function on separate thread if EMA crossover detected & RSI within threshold
         self.model.addPrice(self.exchange.getTime(), self.exchange.getPrice(self.product_id))
-        self.model.calculateRSI(14)
         return self.model.calculateCrossover()

@@ -1,16 +1,14 @@
-import json, requests
-from exchange.CoinBaseAuthenticate import CoinbaseExchangeAuth
-from exchange.CoinBase import Coinbase
+import json, requests, datetime
 
 from candles import *
 from operator import itemgetter
 
-class DemoCoinBase(Coinbase):
+class DemoCoinBase(object):
     # Demo class which connects to gdax but never actually creates an order
 
-    def __init__(self, api_key, secret_key, passphrase, api_url):
-        super(DemoCoinBase, self).__init__(api_key, secret_key, passphrase, api_url)
+    def __init__(self, productId):
         self.priceCount = 0
+        self.productId = productId
 
         # Sort list of lists with in each item: [ time, low, high, open, close, volume ]
         self.candles = {}
@@ -19,24 +17,21 @@ class DemoCoinBase(Coinbase):
             print (key, "=>", len(val))
             self.candles[key] = sorted(val, key=itemgetter(0))
 
-    def getObject(self, product_id):
-        return self.candles[product_id][self.priceCount]
-
-    def getTime(self):
-        return self.candles[self.requestedProductId][self.priceCount][0]
+    async def get_time(self):
+        time = {}
+        time['epoch'] = self.candles[self.productId][self.priceCount][0]
+        time['iso'] = datetime.datetime.utcfromtimestamp(time['epoch']).isoformat()
+        return time
 
     def getBalance(self, currency):
         return float(100.0)
 
-    def getProductId(self, base_currency, quote_currency):
-        self.requestedProductId = "{}-{}".format(base_currency, quote_currency)
-        return self.requestedProductId
-
-    def getPrice(self, product_id):
+    async def get_product_ticker(self):
         # Just use the high price
-        price = self.candles[product_id][self.priceCount][2]
+        ticker = {}
+        ticker['price'] = self.candles[self.productId][self.priceCount][2]
         self.priceCount += 1
-        return price
+        return ticker
 
     def determinePrice(self, product_id, option):
         return self.candles[product_id][self.priceCount][2]

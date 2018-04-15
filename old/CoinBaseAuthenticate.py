@@ -14,8 +14,7 @@ class CoinbaseExchangeAuth(AuthBase):
         r = requests.get(self.api_url + 'time')
         timestamp = str((r.json())['epoch'])
         message = timestamp + request.method + request.path_url + (request.body or '')
-        request.headers.update(get_auth_headers(timestamp, message, self.api_key, self.secret_key,
-                                                self.passphrase))
+        request.headers.update(get_auth_headers(timestamp, message, self.api_key, self.secret_key, self.passphrase))
         return request
 
 def get_auth_headers(timestamp, message, api_key, secret_key, passphrase):

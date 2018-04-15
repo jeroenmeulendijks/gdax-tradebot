@@ -1,29 +1,26 @@
 
-from exchange.CoinBase import *
-from exchange.Exchange import *
+from exchange.Orders import *
 from config import *
 
 import datetime
+import asyncio
 
-cb = Coinbase(API_KEY, API_SECRET, API_PASS, API_URL)
-#e = Exchange(cb)
+async def run_orderbook():
+    async with gdax.orderbook.OrderBook(product_ids='BTC-EUR',
+                                        api_key=API_KEY,
+                                        api_secret=API_SECRET,
+                                        passphrase=API_PASS) as orderbook:
+        while True:
+            message = await orderbook.handle_message()
+            if message is None:
+                continue
+            print('BTC-EUR ask: %s bid: %s' %
+                  (orderbook.get_ask('BTC-EUR'),
+                   orderbook.get_bid('BTC-EUR')))
 
-#e.buy("ETH-EUR", "EUR")
-
-#print (cb.getTime())
-#print (cb.getBalance("EUR"))
-#print (cb.getBalance("ETH"))
-#print (cb.getProductId("ETH", "EUR"))
-#print (cb.buy("ETH-EUR", 1, 0.99))
-
-#print (cb.getOrderStatus("30082361-c34a-4369-a792-1666dbfb6462"))
-#print (cb.getOrderStatus("10"))
-#print (cb.getOrders())
-
-#print(e.cancelOrder("705171a8-9611-4e28-a5c5-f346dd5be616"))
-#print (cb.getOrders())
-
-#print(cb.determinePrice("ETH-EUR", "buy"))
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_orderbook())
 
 exit(0)
 # Test method to retrieve historic data from gdax

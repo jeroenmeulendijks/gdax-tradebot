@@ -101,5 +101,5 @@ ENV/
 .mypy_cache/
 
 # Custom project files to ignore
-price.csv
+*.csv
 config.py

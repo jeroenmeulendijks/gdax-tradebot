@@ -1,55 +1,93 @@
-import time
 import asyncio
 import gdax
+import queue
+import logging
 
-from exchange.DemoCoinBase import *
 from exchange.Orders import *
 from model.Model import *
 
-# Custom settings
-LOOP_DURATION = 10 # Time period (in seconds)
-MAX_LOOP_TIME = 120 # 10 * 60 * 60 # Max duration to run (in seconds)
-QUOTE_CURRENCY = "BTC" # Cryptocurrency of choice
-BASE_CURRENCY = "EUR" # Fiat currency of choice
-CSV_PRICE = "price.csv" # Price CSV name
+import threading
 
-PRODUCT_ID = "{}-{}".format(QUOTE_CURRENCY, BASE_CURRENCY)
+# Custom configuration
+PRODUCT_IDS = ['BTC-EUR', 'ETH-EUR'] # Configure which currencies you want to use.
 
-orders = Orders()
-orders.setTimeout(15)
+PLOT = 1 # 0: disable plotting
+         # 1: enable plotting (Only enable it when you are debugging your algorithm)
+         #    Also you can only plot max 4 graphs so make sure PRODUCT_IDS doesn't contain more than 4 product id's
 
-model = Model(CSV_PRICE)
+CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
+ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
 
-async def EMACrossover(trader):
-    # Trigger order function on separate thread if EMA crossover detected & RSI within threshold
-    ticker = await trader.get_product_ticker()
-    time = await trader.get_time()
+def tradeSignalReceived(signal):
+    # TODO: Determine what to buy/sell (is now hard-coded!)
+    logger.debug("Trade signal ({}) received for {}".format(signal['value'], signal['productId']))
 
-    model.addPrice(time['iso'], ticker['price'])
-    return model.calculateCrossover()
+    if signal['value'] == 'buy':
+        orders.buy({'productId': signal['productId'], 'size': 0.02, 'price': 1.00})
+    elif signal['value'] == 'sell':
+        orders.sell({'productId': signal['productId'], 'size': 0.001, 'price': 100000.00})
 
-async def worker():
-    if (USE_TEST_PRICES):
-        trader = DemoCoinBase(PRODUCT_ID)
-    else:
-        trader = gdax.trader.Trader(product_id=PRODUCT_ID, api_key=API_KEY, api_secret=API_SECRET, passphrase=API_PASS)
+async def run_orderbook():
+    async with gdax.orderbook.OrderBook(product_ids=PRODUCT_IDS,
+                                        api_key=API_KEY,
+                                        api_secret=API_SECRET,
+                                        passphrase=API_PASS, use_heartbeat=True) as orderbook:
+        while True:
+            message = await orderbook.handle_message()
 
+            for model in models:
+                model.add(message)
+
+def start_async_stuff():
+    loop.run_until_complete(run_orderbook())
+
+def setupLogging(logger):
+    logger.setLevel(logging.DEBUG)
+    # create file handler which logs even debug messages
+    fh = logging.FileHandler('debug.log')
+    fh.setLevel(logging.DEBUG)
+
+    # create console handler with a higher log level
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # add the handlers to the logger
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+
+if __name__ == "__main__":
+    logger = logging.getLogger('gdax-tradebot')
+    setupLogging(logger)
+
+    ohlcQueue = queue.Queue()
+
+    orders = Orders()
+    orders.setTimeout(ORDER_TIMEOUT)
+    models = []
+    # Define if we can plot 2 or 4 graphs
+    plotIndex = 221 if len(PRODUCT_IDS) > 2 else 211
+    for productId in PRODUCT_IDS:
+        models.append(Model(plotIndex, productId, ohlcQueue, CANDLE_TIME, tradeSignalReceived))
+        plotIndex += 1
+
+    loop = asyncio.get_event_loop()
+
+    t = threading.Thread(target=start_async_stuff)
+    t.setDaemon (True)
+    t.start()
+
+    # Test for plotting the candlesticks which must be done on the main thread
     while True:
-        signal = await EMACrossover(trader)
-        print(signal)
-        if signal is not None:
-            # TODO: Determine what to buy/sell (is now hard-coded!)
-            if signal['value'] == 'buy':
-                await orders.buy({'productId': 'BTC-EUR', 'size': 0.02, 'price': 1.00})
-            elif signal['value'] == 'sell':
-                await orders.sell({'productId': 'BTC-EUR', 'size': 0.001, 'price': 100000.00})
-        else:
-            print("EMACrossover calculate NO signal")
+        try:
+            _ = ohlcQueue.get(timeout=5)
 
-        # Enable to get a graph with values plotted
-        #model.plotGraph();
-
-        await asyncio.sleep(LOOP_DURATION)
-
-loop = asyncio.get_event_loop()
-loop.run_until_complete(worker())
+            if (PLOT == 1):
+                for model in models:
+                    model.plotGraph()
+        except queue.Empty:
+            pass

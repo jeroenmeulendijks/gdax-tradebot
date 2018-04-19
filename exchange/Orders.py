@@ -4,6 +4,7 @@ import gdax
 import random
 import time
 import uuid
+import logging
 
 from threading import Thread
 from queue import Queue
@@ -12,6 +13,7 @@ from config import *
 
 # Worker Queue for orders
 q = Queue()
+logger = logging.getLogger('gdax-tradebot')
 
 def worker():
     while True:
@@ -36,7 +38,7 @@ async def handle_order(order):
             order_id = res['id']
             status = res['status']
         except aiohttp.client_exceptions.ClientResponseError as e:
-            print('Failed to execute [sell] order: {} Error: {}'.format(order['client_oid'], e))
+            logger.error('Failed to execute [sell] order: {} Error: {}'.format(order['client_oid'], e))
     else: # buy
         try:
             res = await trader.buy(type='limit', size=order['size'], price=order['price'], time_in_force='GTC')
@@ -44,7 +46,7 @@ async def handle_order(order):
             order_id = res['id']
             status = res['status']
         except aiohttp.client_exceptions.ClientResponseError as e:
-            print('Failed to execute [buy] order: {} Error: {}'.format(order['client_oid'], e))
+            logger.error('Failed to execute [buy] order: {} Error: {}'.format(order['client_oid'], e))
 
     # Wait until the order is finished
     while (status != 'done'):
@@ -56,11 +58,11 @@ async def handle_order(order):
             status = stat['status']
             #print("Order: {} has status {}".format(order_id, status))
         except aiohttp.client_exceptions.ClientResponseError as e:
-            print(e)
+            logger.error(e)
             break
 
         if (order['timeout'] > 0 and (time.time() - starttime) > order['timeout']):
-            print("Order {} has timedout. Cancelling the order".format(order_id))
+            logger.info("Order {} has timedout. Cancelling the order".format(order_id))
             # TODO: Not sure why but cancel_order(order_id) fails with bad_request, so for now cancel all orders
             #stat = await trader.cancel_order(order_id)
             stat = await trader.cancel_all()
@@ -68,7 +70,7 @@ async def handle_order(order):
             #print(stat)
             break
 
-    print("DONE HANDLING ORDER:" + str(order_id))
+    logger.debug("DONE HANDLING ORDER:" + str(order_id))
 
 class Orders(object):
     def __init__(self):
@@ -83,7 +85,7 @@ class Orders(object):
     def setTimeout(self, timeoutInSec):
         self.timeout = timeoutInSec
 
-    async def buy(self, params):
+    def buy(self, params):
         params['type'] = 'buy'
         params['timeout'] = self.timeout
         params['client_oid'] = uuid.uuid4()
@@ -91,11 +93,11 @@ class Orders(object):
         if not (TEST_MODE):
             q.put(params)
 
-        print("Buying {} size: {} price: {} ({})".format(params['productId'], params['size'], params['price'], params['client_oid']))
+        logger.info("Buying {} size: {} price: {} ({})".format(params['productId'], params['size'], params['price'], params['client_oid']))
 
         return params['client_oid']
 
-    async def sell(self, params):
+    def sell(self, params):
         params['type'] = 'sell'
         params['timeout'] = self.timeout
         params['client_oid'] = uuid.uuid4()
@@ -103,6 +105,6 @@ class Orders(object):
         if not (TEST_MODE):
             q.put(params)
 
-        print("Selling {} size: {} price: {} ({})".format(params['productId'], params['size'], params['price'], params['client_oid']))
+        logger.info("Selling {} size: {} price: {} ({})".format(params['productId'], params['size'], params['price'], params['client_oid']))
 
         return params['client_oid']

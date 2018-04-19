@@ -24,17 +24,19 @@ The project was built and tested with Python 3.6.4. To install the required pack
 
 ```
 pip install -r requirements.txt
+pip install https://github.com/matplotlib/mpl_finance/archive/master.zip
 ```
 ### Customisation
 
 To customise the project you can edit the following variables, as shown in example.py:
 
 ```
-LOOP_DURATION = 60 # Time period (in seconds)
-MAX_LOOP_TIME = 8 * 60 * 60 # Max duration to run (in seconds)
-QUOTE_CURRENCY = "BTC" # Cryptocurrency of choice
-BASE_CURRENCY = "EUR" # Fiat currency of choice
-CSV_PRICE = "price.csv" # Price CSV name
+PRODUCT_IDS = ['BTC-EUR', 'ETH-EUR'] # Configure which currencies you want to use
+PLOT = 1 # 0: disable plotting
+         # 1: enable plotting (Only enable it when you are debugging your algorithm)
+         #    Also you can only plot max 4 graphs so make sure PRODUCT_IDS doesn't contain more than 4 product id's
+CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
+ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
 ```
 
 To run an example set TEST_MODE = 1 and run

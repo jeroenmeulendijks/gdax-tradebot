@@ -3,6 +3,8 @@ import time
 import datetime
 import logging
 
+from config import *
+
 class RepeatingTimer(object):
     def __init__(self, interval, f, *args, **kwargs):
         self.interval = interval
@@ -34,16 +36,26 @@ class OHLC(object):
         self.logger = logging.getLogger('gdax-tradebot')
 
         self.t = RepeatingTimer(periodInSeconds, self.timeExpired)
-        self.t.start()
+        if not (USE_TEST_PRICES):
+            self.t.start()
 
     def __del__(self):
         self.t.cancel()
 
     def add(self, message):
         if message is not None and message['type'] == 'match' and message['product_id'] == self.getProductId():
-            self.prices.append(float(message['price']))
-            self.sizes.append(float(message['size']))
-            self.lastestTime = message['time']
+            if (USE_TEST_PRICES):
+                self.prices.append(float(message['open']))
+                self.prices.append(float(message['low']))
+                self.prices.append(float(message['high']))
+                self.prices.append(float(message['close']))
+                self.sizes.append(float(message['size']))
+                self.lastestTime = message['time']
+                self.timeExpired()
+            else:
+                self.prices.append(float(message['price']))
+                self.sizes.append(float(message['size']))
+                self.lastestTime = message['time']
 
     def getTime(self):
         return self.lastestTime
@@ -67,7 +79,7 @@ class OHLC(object):
         return sum(self.sizes)
 
     def timeExpired(self):
-        self.logger.info(self)
+        self.logger.debug(self)
         if (len(self.prices) > 0):
             self.callback(self)
         del self.prices[:]

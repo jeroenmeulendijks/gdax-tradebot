@@ -2,21 +2,14 @@ import asyncio
 import gdax
 import queue
 import logging
+import time
 
 from exchange.Orders import *
+from exchange.DemoOrderBook import *
 from model.Model import *
+from config import *
 
 import threading
-
-# Custom configuration
-PRODUCT_IDS = ['BTC-EUR', 'ETH-EUR'] # Configure which currencies you want to use.
-
-PLOT = 1 # 0: disable plotting
-         # 1: enable plotting (Only enable it when you are debugging your algorithm)
-         #    Also you can only plot max 4 graphs so make sure PRODUCT_IDS doesn't contain more than 4 product id's
-
-CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
-ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
 
 def tradeSignalReceived(signal):
     # TODO: Determine what to buy/sell (is now hard-coded!)
@@ -28,15 +21,23 @@ def tradeSignalReceived(signal):
         orders.sell({'productId': signal['productId'], 'size': 0.001, 'price': 100000.00})
 
 async def run_orderbook():
-    async with gdax.orderbook.OrderBook(product_ids=PRODUCT_IDS,
-                                        api_key=API_KEY,
-                                        api_secret=API_SECRET,
-                                        passphrase=API_PASS, use_heartbeat=True) as orderbook:
-        while True:
-            message = await orderbook.handle_message()
+    if (USE_TEST_PRICES):
+        with DemoOrderBook(PRODUCT_IDS) as orderbook:
+            while True:
+                message = await orderbook.handle_message()
 
-            for model in models:
-                model.add(message)
+                for model in models:
+                    model.add(message)
+    else:
+        async with gdax.orderbook.OrderBook(product_ids=PRODUCT_IDS,
+                                            api_key=API_KEY,
+                                            api_secret=API_SECRET,
+                                            passphrase=API_PASS, use_heartbeat=True) as orderbook:
+            while True:
+                message = await orderbook.handle_message()
+
+                for model in models:
+                    model.add(message)
 
 def start_async_stuff():
     loop.run_until_complete(run_orderbook())

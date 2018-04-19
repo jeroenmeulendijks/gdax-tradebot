@@ -8,8 +8,6 @@ import os.path
 from mpl_finance import candlestick2_ohlc
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-#import matplotlib.dates as dates
 
 from exchange.OHLC import *
 
@@ -105,7 +103,7 @@ class Model(object):
 
     def plotGraph(self):
         # Plot X/Y graph for both EMAs, with a movin window
-        df = self.ema_dataframe.tail(50)
+        df = self.ema_dataframe #.tail(50)
         length = df.shape[0]
         if length > 1:
             plt.figure(1, figsize=(12, 8), dpi=60)

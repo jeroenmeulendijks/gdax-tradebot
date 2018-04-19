@@ -3,12 +3,13 @@ import json, requests, datetime
 from candles import *
 from operator import itemgetter
 
-class DemoCoinBase(object):
+class DemoOrderBook(object):
     # Demo class which connects to gdax but never actually creates an order
 
-    def __init__(self, productId):
+    def __init__(self, productIds):
         self.priceCount = 0
-        self.productId = productId
+        self.productIdLen = len(productIds)
+        self.productIds = productIds
 
         # Sort list of lists with in each item: [ time, low, high, open, close, volume ]
         self.candles = {}
@@ -17,36 +18,32 @@ class DemoCoinBase(object):
             print (key, "=>", len(val))
             self.candles[key] = sorted(val, key=itemgetter(0))
 
-    async def get_time(self):
-        time = {}
-        time['epoch'] = self.candles[self.productId][self.priceCount][0]
-        time['iso'] = datetime.datetime.utcfromtimestamp(time['epoch']).isoformat()
-        return time
+    def __enter__(self):
+        return self
 
-    def getBalance(self, currency):
-        return float(100.0)
+    def __exit__(self, type, value, traceback):
+        pass
 
-    async def get_product_ticker(self):
-        # Just use the high price
-        ticker = {}
-        ticker['price'] = self.candles[self.productId][self.priceCount][2]
+    async def handle_message(self):
+        message = {}
+
+        productId = self.productIds[self.priceCount % self.productIdLen]
+
+        candle = self.candles[productId][self.priceCount]
+        # candle is stored as [ time, low, high, open, close, volume ]
+        message['type'] = 'match'
+        message['product_id'] = productId
+        message['time'] = "{}.000Z".format(datetime.datetime.utcfromtimestamp(candle[0]).isoformat())
+        message['low'] = candle[1]
+        message['high'] = candle[2]
+        message['open'] = candle[3]
+        message['close'] = candle[4]
+        message['size'] = candle[5]
+
         self.priceCount += 1
-        return ticker
-
-    def determinePrice(self, product_id, option):
-        return self.candles[product_id][self.priceCount][2]
-
-    def buy(self, product_id, quantity, price):
-        return self._createDemoOrderResult("buy", product_id, quantity, price)
-
-    def sell(self, product_id, quantity, price, upper):
-        return self._createDemoOrderResult("sell", product_id, quantity, price)
-
-    def getOrderStatus(self, order_id):
-        return "done"
-
-    def cancelOrder(self, order_id):
-        return [order_id]
+        if (self.priceCount > len(self.candles[productId])):
+            self.priceCount = 0
+        return message
 
     def _createDemoOrderResult(self, side, product_id, quantity, price):
         order = {}

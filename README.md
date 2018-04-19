@@ -16,8 +16,8 @@ API_SECRET = ""
 API_PASS = ""
 API_URL = "https://api.gdax.com/" # Sandbox: https://api-public.sandbox.gdax.com/
 
-TEST_MODE = 1 # 0 for actual trading against the exchange; 1 for test mode
-USE_TEST_PRICES = 1 # 0 to get prices from gdax, 1 to use test prices in candles.py
+TEST_MODE = 1       # 0 for actual trading against the exchange; 1 for test mode (no trading!)
+USE_TEST_PRICES = 0 # 0 to get prices from gdax, 1 to use test prices in candles.py
 ```
 
 The project was built and tested with Python 3.6.4. To install the required packages, run the following:

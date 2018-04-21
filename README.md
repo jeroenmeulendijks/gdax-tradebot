@@ -24,6 +24,10 @@ PLOT = 1 # 0: disable plotting
          # 1: enable plotting (Only enable it when you are debugging your algorithm)
 CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
 ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
+
+# Select which indicators you want to use
+# Possible values 'EMA', 'DMI', 'MACD', 'RSI'
+INDICATORS = ['EMA', 'DMI', 'MACD', 'RSI']
 ```
 
 The project was built and tested with Python 3.6.5. To install the required packages, run the following:

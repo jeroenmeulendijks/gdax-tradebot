@@ -25,6 +25,7 @@ async def run_orderbook():
         with DemoOrderBook(PRODUCT_IDS) as orderbook:
             while True:
                 message = await orderbook.handle_message()
+                time.sleep(0.5)
 
                 for model in models:
                     model.add(message)

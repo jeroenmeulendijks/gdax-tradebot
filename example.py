@@ -70,11 +70,9 @@ if __name__ == "__main__":
     orders = Orders()
     orders.setTimeout(ORDER_TIMEOUT)
     models = []
-    # Define if we can plot 2 or 4 graphs
-    plotIndex = 221 if len(PRODUCT_IDS) > 2 else 211
+
     for productId in PRODUCT_IDS:
-        models.append(Model(plotIndex, productId, ohlcQueue, CANDLE_TIME, tradeSignalReceived))
-        plotIndex += 1
+        models.append(Model(productId, ohlcQueue, CANDLE_TIME, tradeSignalReceived))
 
     loop = asyncio.get_event_loop()
 
@@ -87,8 +85,7 @@ if __name__ == "__main__":
         try:
             _ = ohlcQueue.get(timeout=5)
 
-            if (PLOT == 1):
-                for model in models:
-                    model.plotGraph()
+            for model in models:
+                model.plotGraph()
         except queue.Empty:
             pass

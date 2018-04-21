@@ -3,3 +3,5 @@ requests>=2.18.4
 stockstats>=0.2.0
 matplotlib>=2.1.1
 gdax-python-api>=0.2
+# Only needed when you want to have plots (Maybe not install it when running the actual bot?)
+wxPython>=4.0.1

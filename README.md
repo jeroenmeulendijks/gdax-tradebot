@@ -22,7 +22,6 @@ USE_TEST_PRICES = 1 # 0 to get prices from gdax, 1 to use test prices in candles
 PRODUCT_IDS = ['BTC-EUR', 'ETH-EUR'] # Configure which currencies you want to use
 PLOT = 1 # 0: disable plotting
          # 1: enable plotting (Only enable it when you are debugging your algorithm)
-         #    Also you can only plot max 4 graphs so make sure PRODUCT_IDS doesn't contain more than 4 product id's
 CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
 ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
 ```

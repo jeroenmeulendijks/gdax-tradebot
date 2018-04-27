@@ -14,20 +14,26 @@ You will need a GDAX account and an API key. Create a config file (config.py) in
 API_KEY = ""
 API_SECRET = ""
 API_PASS = ""
-API_URL = "https://api.gdax.com/" # Sandbox: https://api-public.sandbox.gdax.com/
 
-TEST_MODE = 1       # 0 for actual trading against the exchange; 1 for test mode (no trading!)
-USE_TEST_PRICES = 1 # 0 to get prices from gdax, 1 to use test prices in candles.py
+USE_SANDBOX = 1     # 0 for gdax live environment; 1 for use the sandbox environment
+TEST_MODE = 0       # 0 for actual trading against the exchange; 1 for test mode (no trading!)
+USE_TEST_PRICES = 0 # 0 to get prices from gdax, 1 to use test prices
 
-PRODUCT_IDS = ['BTC-EUR', 'ETH-EUR'] # Configure which currencies you want to use
-PLOT = 1 # 0: disable plotting
-         # 1: enable plotting (Only enable it when you are debugging your algorithm)
-CANDLE_TIME = 15    # Seconds for accumulating in 1 candlesticks
+# Enable/Disable plotting the candles and indicators
+# 0: disable plotting
+# 1: enable plotting (Only enable it when you are debugging your algorithm)
+PLOT = 1
+
+# Configure which currencies you want to use
+# Possible values for gdax 'BTC-EUR', 'ETH-EUR', 'LTC-EUR'
+PRODUCT_IDS = ['BTC-EUR']
+
+CANDLE_TIME = 60    # Seconds for accumulating in 1 candlesticks
 ORDER_TIMEOUT = 15  # Seconds after which an (not filled) order is canceled automatically
 
 # Select which indicators you want to use
 # Possible values 'EMA', 'DMI', 'MACD', 'RSI'
-INDICATORS = ['EMA', 'DMI', 'MACD', 'RSI']
+INDICATORS = ['EMA', 'MACD']
 ```
 
 The project was built and tested with Python 3.6.5. To install the required packages, run the following:

@@ -1,47 +1,49 @@
 import asyncio
-import gdax
-import queue
 import logging
 import time
 
+from queue import Queue
 from exchange.Orders import *
-from exchange.DemoOrderBook import *
+from exchange.GdaxOrderBook import *
 from model.Model import *
 from config import *
 
 import threading
 
 def tradeSignalReceived(signal):
-    # TODO: Determine what to buy/sell (is now hard-coded!)
-    logger.debug("Trade signal ({}) received for {}".format(signal['value'], signal['productId']))
+    tradeQueue.put(signal)
 
-    if signal['value'] == 'buy':
-        orders.buy({'productId': signal['productId'], 'size': 0.02, 'price': 1.00})
-    elif signal['value'] == 'sell':
-        orders.sell({'productId': signal['productId'], 'size': 0.001, 'price': 100000.00})
+async def runTrader():
+    manager = OrderManager()
+    await manager.initialize()
 
-async def run_orderbook():
-    if (USE_TEST_PRICES):
-        with DemoOrderBook(PRODUCT_IDS) as orderbook:
-            while True:
-                message = await orderbook.handle_message()
-                time.sleep(0.5)
+    while True:
+        signal = tradeQueue.get()
+        logger.debug("Trade signal ({}) received for {}".format(signal['value'], signal['productId']))
 
-                for model in models:
-                    model.add(message)
-    else:
-        async with gdax.orderbook.OrderBook(product_ids=PRODUCT_IDS,
-                                            api_key=API_KEY,
-                                            api_secret=API_SECRET,
-                                            passphrase=API_PASS, use_heartbeat=True) as orderbook:
-            while True:
-                message = await orderbook.handle_message()
+        if signal['value'] == 'buy':
+            await manager.buy(signal['productId'], signal['price'])
+        elif signal['value'] == 'sell':
+            await manager.sell(signal['productId'], signal['price'])
 
-                for model in models:
-                    model.add(message)
+def newCandle(ohlc, productId):
+    models[productId].addCandle(ohlc)
 
-def start_async_stuff():
-    loop.run_until_complete(run_orderbook())
+async def runOrderBook():
+    async with getOrderbook() as orderbook:
+        while True:
+            message = await orderbook.handle_message()
+
+            if message is not None and message['type'] == 'match':
+                ohlcs[message['product_id']].add(message)
+
+def startOrderBook():
+    loopBook = asyncio.new_event_loop()
+    loopBook.run_until_complete(runOrderBook())
+
+def startTrader():
+    loopTrader = asyncio.new_event_loop()
+    loopTrader.run_until_complete(runTrader())
 
 def setupLogging(logger):
     logger.setLevel(logging.DEBUG)
@@ -66,27 +68,29 @@ if __name__ == "__main__":
     logger = logging.getLogger('gdax-tradebot')
     setupLogging(logger)
 
-    ohlcQueue = queue.Queue()
+    tradeQueue = Queue()
 
-    orders = Orders()
-    orders.setTimeout(ORDER_TIMEOUT)
-    models = []
-
+    models = {}
+    ohlcs = {}
     for productId in PRODUCT_IDS:
-        models.append(Model(productId, ohlcQueue, CANDLE_TIME, tradeSignalReceived))
+        ohlcs[productId] = OHLC(CANDLE_TIME, productId, newCandle)
+        models[productId] = Model(productId, tradeSignalReceived)
 
-    loop = asyncio.get_event_loop()
+    t = threading.Thread(target=startOrderBook)
+    t.setDaemon(True)
+    t.start()
 
-    t = threading.Thread(target=start_async_stuff)
-    t.setDaemon (True)
+    t = threading.Thread(target=startTrader)
+    t.setDaemon(True)
     t.start()
 
     # Test for plotting the candlesticks which must be done on the main thread
+    starttime = time.time()
     while True:
-        try:
-            _ = ohlcQueue.get(timeout=5)
-
-            for model in models:
+        if (PLOT == 1):
+            for key, model in models.items():
                 model.plotGraph()
-        except queue.Empty:
-            pass
+
+        if (TEST_MODE and (time.time() - starttime) > 15):
+            exit(0)
+        time.sleep(0.1)

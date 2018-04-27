@@ -43,19 +43,18 @@ class OHLC(object):
         self.t.cancel()
 
     def add(self, message):
-        if message is not None and message['type'] == 'match' and message['product_id'] == self.getProductId():
-            if (USE_TEST_PRICES):
-                self.prices.append(float(message['open']))
-                self.prices.append(float(message['low']))
-                self.prices.append(float(message['high']))
-                self.prices.append(float(message['close']))
-                self.sizes.append(float(message['size']))
-                self.lastestTime = message['time']
-                self.timeExpired()
-            else:
-                self.prices.append(float(message['price']))
-                self.sizes.append(float(message['size']))
-                self.lastestTime = message['time']
+        if (USE_TEST_PRICES):
+            self.prices.append(float(message['open']))
+            self.prices.append(float(message['low']))
+            self.prices.append(float(message['high']))
+            self.prices.append(float(message['close']))
+            self.sizes.append(float(message['size']))
+            self.lastestTime = message['time']
+            self.timeExpired()
+        else:
+            self.prices.append(float(message['price']))
+            self.sizes.append(float(message['size']))
+            self.lastestTime = message['time']
 
     def getTime(self):
         return self.lastestTime
@@ -81,7 +80,7 @@ class OHLC(object):
     def timeExpired(self):
         self.logger.debug(self)
         if (len(self.prices) > 0):
-            self.callback(self)
+            self.callback(self, self.getProductId())
         del self.prices[:]
         del self.sizes[:]
 

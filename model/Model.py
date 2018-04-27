@@ -25,11 +25,10 @@ from exchange.OHLC import *
 from model.Indicators import *
 
 class Model(object):
-    def __init__(self, productId, candleTimeInsec, callback, *args, **kwargs):
+    def __init__(self, productId, callback, *args, **kwargs):
         self.csv_price = "price_{}.csv".format(productId)
         self.figureIndex = None
         self.productId = productId
-        self.ohlc = OHLC(candleTimeInsec, productId, self._newCandleAvailable)
         self.callback = callback
 
         # Setup the indicator classes
@@ -53,10 +52,7 @@ class Model(object):
         #if not csv_price_exists:
         self.logPrice(False)
 
-    def add(self, message):
-        self.ohlc.add(message)
-
-    def _newCandleAvailable(self, ohlc):
+    def addCandle(self, ohlc):
         utc_time = time.strptime(ohlc.getTime(), "%Y-%m-%dT%H:%M:%S.%fZ")
         epoch_time = timegm(utc_time)
 
@@ -80,48 +76,48 @@ class Model(object):
             signal = indicator.signal(stock)
             if (signal.value != None):
                 if (signal.value == Signal.BUY):
-                    self.callback({'value': 'buy, 'productId': self.productId, 'price': ohlc.getClose()})
+                    self.callback({'value': 'buy', 'productId': self.productId, 'price': ohlc.getClose()})
                 if (signal.value == Signal.SELL):
                     self.callback({'value': 'sell', 'productId': self.productId, 'price': ohlc.getClose()})
+                break
 
     def plotGraph(self):
         # Plot X/Y graph for both EMAs, with a movin window
-        if (PLOT == 1):
-            df = self.ema_dataframe.tail(50)
-            length = df.shape[0]
-            if length > 1:
-                dfCopy = df.copy(True)
-                stock = StockDataFrame.retype(dfCopy)
+        df = self.ema_dataframe.tail(50)
+        length = df.shape[0]
+        if length > 1:
+            dfCopy = df.copy(True)
+            stock = StockDataFrame.retype(dfCopy)
 
-                if (self.figureIndex == None):
-                    self.figureIndex = len(plt.get_fignums()) + 1
-                numRows = len(self.indicators) + 1
-                for indicator in self.indicators:
-                    if (indicator.plotWithPrice()):
-                        numRows -= 1
+            if (self.figureIndex == None):
+                self.figureIndex = len(plt.get_fignums()) + 1
+            numRows = len(self.indicators) + 1
+            for indicator in self.indicators:
+                if (indicator.plotWithPrice()):
+                    numRows -= 1
 
-                plt.figure(self.figureIndex, figsize=(20, 12), dpi=60)
-                pricePlot = plt.subplot(numRows, 1, 1)
-                pricePlot.cla()
-                ax = plt.gca()
-                ax.set_title(self.productId)
-                ax.set_xticklabels([])
-                candlestick2_ohlc(ax, df['open'], df['high'], df['low'], df['close'], width=0.4, colorup='#77d879', colordown='#db3f3f')
-                plt.ylabel('Price')
+            plt.figure(self.figureIndex, figsize=(20, 12), dpi=60)
+            pricePlot = plt.subplot(numRows, 1, 1)
+            pricePlot.cla()
+            ax = plt.gca()
+            ax.set_title(self.productId)
+            ax.set_xticklabels([])
+            candlestick2_ohlc(ax, df['open'], df['high'], df['low'], df['close'], width=0.4, colorup='#77d879', colordown='#db3f3f')
+            plt.ylabel('Price')
 
-                plotIndex = 2
-                for indicator in self.indicators:
-                    if (indicator.plotWithPrice()):
-                        p = pricePlot
-                    else:
-                        p = plt.subplot(numRows, 1, plotIndex)
-                        plotIndex += 1
-                    indicator.plot(p, stock)
+            plotIndex = 2
+            for indicator in self.indicators:
+                if (indicator.plotWithPrice()):
+                    p = pricePlot
+                else:
+                    p = plt.subplot(numRows, 1, plotIndex)
+                    plotIndex += 1
+                indicator.plot(p, stock)
 
-                    plt.ylabel(indicator)
-                    plt.legend()
+                plt.ylabel(indicator)
+                plt.legend()
 
-                plt.pause(0.05)
+            plt.pause(0.05)
 
     def logPrice(self, append = True):
         mode='w'

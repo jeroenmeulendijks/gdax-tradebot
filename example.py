@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import time
+import queue
 
-from queue import Queue
 from exchange.Orders import *
 from exchange.GdaxOrderBook import *
 from model.Model import *
@@ -64,11 +64,20 @@ def setupLogging(logger):
     logger.addHandler(fh)
     logger.addHandler(ch)
 
+    # Create logger for the OHLC
+    ohlclogger = logging.getLogger('gdax-tradebot.ohlc')
+    fh = logging.FileHandler('ohlc.log')
+    fh.setLevel(logging.DEBUG)
+    # create formatter and add it to the handlers
+    formatter = logging.Formatter('%(message)s')
+    fh.setFormatter(formatter)
+    ohlclogger.addHandler(fh)
+
 if __name__ == "__main__":
     logger = logging.getLogger('gdax-tradebot')
     setupLogging(logger)
 
-    tradeQueue = Queue()
+    tradeQueue = queue.Queue()
 
     models = {}
     ohlcs = {}
@@ -91,6 +100,6 @@ if __name__ == "__main__":
             for key, model in models.items():
                 model.plotGraph()
 
-        if (TEST_MODE and (time.time() - starttime) > 15):
-            exit(0)
-        time.sleep(0.1)
+        #if (TEST_MODE and (time.time() - starttime) > 15):
+        #    exit(0)
+        time.sleep(1)

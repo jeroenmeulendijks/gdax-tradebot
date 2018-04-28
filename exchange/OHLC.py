@@ -33,7 +33,7 @@ class OHLC(object):
         self.productId = productId
         self.lastestTime = datetime.datetime.now().isoformat()
         self.callback = callback
-        self.logger = logging.getLogger('gdax-tradebot')
+        self.ohlclogger = logging.getLogger('gdax-tradebot.ohlc')
 
         self.t = RepeatingTimer(periodInSeconds, self.timeExpired)
         if not (USE_TEST_PRICES):
@@ -78,8 +78,14 @@ class OHLC(object):
         return sum(self.sizes)
 
     def timeExpired(self):
-        self.logger.debug(self)
         if (len(self.prices) > 0):
+            # [ time, low, high, open, close, volume ]
+            self.ohlclogger.debug("[{}, {}, {}, {}, {}, {}]".format(time.time(),
+                                                                    self.getLow(),
+                                                                    self.getHigh(),
+                                                                    self.getOpen(),
+                                                                    self.getClose(),
+                                                                    self.getVolume()))
             self.callback(self, self.getProductId())
         del self.prices[:]
         del self.sizes[:]

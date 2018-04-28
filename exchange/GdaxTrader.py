@@ -96,6 +96,7 @@ class DemoTrader(object):
                 val_eur += account['balance']
             else:
                 val_eur += account['balance'] * price
+        # TODO: We assume here that we started with 200 Euro's
         logger.info("Total value: {} EUR Profit: {} %".format(val_eur, ((val_eur - 200) / 200) * 100))
 
     def getAccount(self, currency):

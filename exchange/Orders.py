@@ -12,61 +12,7 @@ from queue import Queue
 from config import *
 from exchange.GdaxTrader import *
 
-# Worker Queue for orders
-tradeQueue = Queue()
 logger = logging.getLogger('gdax-tradebot')
-
-def worker():
-    while True:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-
-        trader, order = tradeQueue.get()
-        loop.run_until_complete(handle_order(trader, order))
-        loop.close()
-        tradeQueue.task_done()
-
-async def handle_order(trader, order):
-    #trader = getTrader()
-    starttime = time.time()
-
-    logger.info("{}".format(order))
-
-    try:
-        if (order.type == "sell"):
-            res = await trader.sell(type='limit', product_id=order.productId, size=order.size, price=order.price, time_in_force='GTC')
-        else: # Buy
-            res = await trader.buy(type='limit', product_id=order.productId, size=order.size, price=order.price, time_in_force='GTC')
-        order.update(res)
-
-    except aiohttp.client_exceptions.ClientResponseError as e:
-        logger.error('Failed to execute [{}] Error: {}'.format(order, e))
-        # Set order done with error state
-        order.update({'status': 'done', 'done_reason': e})
-
-    # Wait until the order is finished
-    while (order.status != 'done'):
-        # Randomly wait some time before (re)trying again
-        await asyncio.sleep(random.uniform(1, 5))
-
-        try:
-            stat = await trader.get_order(order.id)
-            order.update(stat)
-            logger.debug("Order: {} has status {}".format(order.id, order.status))
-        except aiohttp.client_exceptions.ClientResponseError as e:
-            logger.error('Failed to execute [{}] Error: {}'.format(order, e))
-            break
-
-        if ((time.time() - starttime) > order.timeout):
-            logger.info("Order {} has timedout. Cancelling the order".format(order.id))
-            # TODO: Not sure why but cancel_order(order_id) fails with bad_request, so for now cancel all orders
-            #stat = await trader.cancel_order(order.id)
-            stat = await trader.cancel_all()
-            # TODO: Check if order really cancelled
-            #print(stat)
-            break
-
-    logger.debug("DONE HANDLING ORDER: {}".format(order))
 
 class Order(object):
     def __init__(self, type, productId, size, price):
@@ -101,6 +47,7 @@ class Order(object):
 
 class OrderManager(object):
     def __init__(self):
+        self.tradeQueue = Queue()
         self.trader = getTrader()
         self.products = {}
         self.accounts = {}
@@ -108,7 +55,7 @@ class OrderManager(object):
 
         # Create a ThreadPool for handling orders
         for i in range(5):
-            t = Thread(target=worker)
+            t = Thread(target=self._worker)
             t.daemon = True
             t.start()
 
@@ -131,13 +78,12 @@ class OrderManager(object):
 
         balance = await self.getBalance(currency)
         volume = self.getVolume(productId, (balance / currentPrice))
-        price = self.getPrice(productId, currentPrice)
+        price = self.getPrice(productId, currentPrice * 0.98)
 
         if (volume > 0.0):
             order = Order('buy', productId, volume, price)
             self.orders.append(order)
-
-            tradeQueue.put((self.trader, order))
+            self.tradeQueue.put(order)
 
             return order.clientOid
         else:
@@ -148,13 +94,12 @@ class OrderManager(object):
         crypto, currency = productId.split("-")
 
         volume = await self.getBalance(crypto)
-        price = self.getPrice(productId, currentPrice)
+        price = self.getPrice(productId, currentPrice * 1.02)
 
         if (volume > 0.0):
             order = Order('sell', productId, volume, price)
             self.orders.append(order)
-
-            tradeQueue.put((self.trader, order))
+            self.tradeQueue.put(order)
 
             return order.clientOid
         else:
@@ -186,3 +131,61 @@ class OrderManager(object):
         quote = self.products[productId]['quote_increment']
 
         return (quote * math.floor(price / quote))
+
+    def _worker(self):
+        while True:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+
+            order = self.tradeQueue.get()
+            loop.run_until_complete(self._handleOrder(order))
+            loop.close()
+            self.tradeQueue.task_done()
+
+    async def _handleOrder(self, order):
+        starttime = time.time()
+        logger.info("{}".format(order))
+
+        # For testing we need to use the same trader object, because it will keep track of all payments/accounts
+        # But with gdax object this is not working because with asyncio the setup should be different
+        # so we use multiple objects to avoid using the same coroutine in multiple threads
+        if (TEST_MODE):
+            trader = self.trader
+        else:
+            trader = getTrader()
+
+        try:
+            if (order.type == "sell"):
+                res = await trader.sell(type='limit', product_id=order.productId, size=order.size, price=order.price, time_in_force='GTC')
+            else: # Buy
+                res = await trader.buy(type='limit', product_id=order.productId, size=order.size, price=order.price, time_in_force='GTC')
+            order.update(res)
+
+        except aiohttp.client_exceptions.ClientResponseError as e:
+            logger.error('Failed to execute [{}] Error: {}'.format(order, e))
+            # Set order done with error state
+            order.update({'status': 'done', 'done_reason': e})
+
+        # Wait until the order is finished
+        while (order.status != 'done'):
+            # Randomly wait some time before (re)trying again
+            await asyncio.sleep(random.uniform(1, 5))
+
+            try:
+                stat = await trader.get_order(order.id)
+                order.update(stat)
+                logger.debug("Order: {} has status {}".format(order.id, order.status))
+            except aiohttp.client_exceptions.ClientResponseError as e:
+                logger.error('Failed to execute [{}] Error: {}'.format(order, e))
+                break
+
+            if ((time.time() - starttime) > order.timeout):
+                logger.info("Order {} has timedout. Cancelling the order".format(order.id))
+                # TODO: Not sure why but cancel_order(order_id) fails with bad_request, so for now cancel all orders
+                #stat = await trader.cancel_order(order.id)
+                stat = await trader.cancel_all()
+                # TODO: Check if order really cancelled
+                #print(stat)
+                break
+
+        logger.debug("DONE HANDLING ORDER: {}".format(order))

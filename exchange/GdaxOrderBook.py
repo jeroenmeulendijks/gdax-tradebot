@@ -19,9 +19,9 @@ def getOrderbook():
         return DemoOrderBook(PRODUCT_IDS)
     else:
         return gdax.orderbook.OrderBook(product_ids=PRODUCT_IDS,
-                                        api_key=LIVE_API_KEY,
-                                        api_secret=LIVE_API_SECRET,
-                                        passphrase=LIVE_API_PASS, use_heartbeat=True)
+                                        api_key=API_KEY,
+                                        api_secret=API_SECRET,
+                                        passphrase=API_PASS, use_heartbeat=True)
 
 class DemoOrderBook(object):
     # Demo class which connects to gdax but never actually creates an order

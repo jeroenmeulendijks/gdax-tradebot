@@ -32,6 +32,7 @@ class DemoTrader(object):
             account['available'] = account['balance']
             account['hold'] = 0
             account['profile_id'] = profileId
+            account['startBalance'] = account['balance']
             self.accounts.append(account)
 
     async def buy(self, product_id=None, price=None, size=None, funds=None,
@@ -89,15 +90,16 @@ class DemoTrader(object):
         else: account['balance'] -= size
         account['available'] = account['balance']
 
-        val_eur = 0
         for account in self.accounts:
-            logger.info("Currency: {} Balance: {}".format(account['currency'], account['balance']))
-            if (account['currency'] == "EUR"):
-                val_eur += account['balance']
+            startBalance = account['startBalance']
+            if (startBalance > 0):
+                profit = ((account['balance'] - startBalance) / startBalance) * 100
             else:
-                val_eur += account['balance'] * price
-        # TODO: We assume here that we started with 200 Euro's
-        logger.info("Total value: {} EUR Profit: {} %".format(val_eur, ((val_eur - 200) / 200) * 100))
+                profit = "*"
+            logger.info("Currency: {} Balance: {} Profit: {} % ({})".format(account['currency'],
+                                                                            account['balance'],
+                                                                            profit,
+                                                                            startBalance))
 
     def getAccount(self, currency):
         for account in self.accounts:

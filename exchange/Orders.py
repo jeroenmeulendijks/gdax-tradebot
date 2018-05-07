@@ -78,7 +78,7 @@ class OrderManager(object):
 
         balance = await self.getBalance(currency)
         volume = self.getVolume(productId, (balance / currentPrice))
-        price = self.getPrice(productId, currentPrice * 0.98)
+        price = self.getPrice(productId, currentPrice * (1 - TRADE_PRICE_OFFSET))
 
         if (volume > 0.0):
             order = Order('buy', productId, volume, price)
@@ -94,7 +94,7 @@ class OrderManager(object):
         crypto, currency = productId.split("-")
 
         volume = await self.getBalance(crypto)
-        price = self.getPrice(productId, currentPrice * 1.02)
+        price = self.getPrice(productId, currentPrice * (1 + TRADE_PRICE_OFFSET))
 
         if (volume > 0.0):
             order = Order('sell', productId, volume, price)
@@ -111,7 +111,8 @@ class OrderManager(object):
 
     async def getBalance(self, currency):
         accounts = await self.trader.get_account(self.accounts[currency])
-        return float(accounts['available'])
+        balance = float(accounts['available']) * BALANCE_FOR_TRADING
+        return balance
 
     def getVolume(self, productId, amount):
         quote = self.products[productId]['quote_increment']

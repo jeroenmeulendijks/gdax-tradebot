@@ -28,6 +28,7 @@ async def runTrader():
 
 def newCandle(ohlc, productId):
     models[productId].addCandle(ohlc)
+    plotQueue.put(ohlc)
 
 async def runOrderBook():
     async with getOrderbook() as orderbook:
@@ -78,6 +79,7 @@ if __name__ == "__main__":
     setupLogging(logger)
 
     tradeQueue = queue.Queue()
+    plotQueue = queue.Queue()
 
     models = {}
     ohlcs = {}
@@ -93,13 +95,8 @@ if __name__ == "__main__":
     t.setDaemon(True)
     t.start()
 
-    # Test for plotting the candlesticks which must be done on the main thread
-    starttime = time.time()
     while True:
+        ohlc = plotQueue.get()
         if (PLOT == 1):
             for key, model in models.items():
                 model.plotGraph()
-
-        #if (TEST_MODE and (time.time() - starttime) > 15):
-        #    exit(0)
-        time.sleep(1)

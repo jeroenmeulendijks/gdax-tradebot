@@ -18,6 +18,24 @@ class GdaxTrader(gdax.trader.Trader):
     else:
         API_URL = "https://api.gdax.com"
 
+    async def buy(self, product_id=None, price=None, size=None, funds=None,
+                  **kwargs):
+        await self.logBalance()
+
+        return await super().buy(product_id, price, size, funds, **kwargs)
+
+    async def sell(self, product_id=None, price=None, size=None, funds=None,
+                   **kwargs):
+        await self.logBalance()
+
+        return await super().sell(product_id, price, size, funds, **kwargs)
+
+    async def logBalance(self):
+        accounts = await self.get_account()
+        for account in accounts:
+            if (float(account['balance']) > 0.0):
+                logger.info("Currency: {} Balance: {}".format(account['currency'], account['balance']))
+
 class DemoTrader(object):
 
     def __init__(self):
@@ -66,15 +84,15 @@ class DemoTrader(object):
                     return account
 
     async def get_order(self, order_id):
-        # For now not needed because order is immediatly filled and this method should never be called
+        # For now not needed because order is immediately filled and this method should never be called
         raise NotImplementedError
 
     async def cancel_order(self, order_id):
-        # For now not needed because order is immediatly filled and this method should never be called
+        # For now not needed because order is immediately filled and this method should never be called
         raise NotImplementedError
 
     async def cancel_all(self, data=None, product_id=''):
-        # For now not needed because order is immediatly filled and this method should never be called
+        # For now not needed because order is immediately filled and this method should never be called
         raise NotImplementedError
 
     def updateBalance(self, type, product_id, price, size):

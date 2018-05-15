@@ -80,7 +80,7 @@ class OHLC(object):
     def timeExpired(self):
         if (len(self.prices) > 0):
             # [ time, low, high, open, close, volume ]
-            self.ohlclogger.debug("[{}, {}, {}, {}, {}, {}]".format(time.time(),
+            self.ohlclogger.debug("[{}, {}, {}, {}, {}, {}],".format(time.time(),
                                                                     self.getLow(),
                                                                     self.getHigh(),
                                                                     self.getOpen(),

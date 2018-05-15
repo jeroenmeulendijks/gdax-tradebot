@@ -7,11 +7,11 @@ import os.path
 
 from stockstats import StockDataFrame
 from math import pi
-from mpl_finance import candlestick2_ohlc
 
 from config import *
 
 if (PLOT == 1):
+    from mpl_finance import candlestick2_ohlc
     import matplotlib
     # Select different backend otherwise the window will keep popping in front while plotting new data
     #['GTK', 'GTKAgg', 'GTKCairo', 'GTK3Agg', 'GTK3Cairo', 'MacOSX', 'nbAgg', 'Qt4Agg',

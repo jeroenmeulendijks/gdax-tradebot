@@ -68,4 +68,11 @@ This project is licensed under the MIT License
 
 This project is started as a fork of https://github.com/emperorcal/gdax-tradingbot, but has been completely rewritten!
 
+## Disclaimer
+- This bot is NOT a sure-fire profit machine. Use it AT YOUR OWN RISK.
+- Crypto-currency is still an experiment, and therefore so is this bot. Meaning, both may fail at any time.
+- Running a bot, and trading in general requires careful study of the risks and parameters involved. A wrong setting can cause you a major loss.
+- Never leave the bot un-monitored for long periods of time. This bot doesn't know when to stop, so be prepared to stop it if too much loss occurs.
+- Often times the default trade parameters will underperform vs. a buy-hold strategy, so run some simulations and find the optimal parameters for your chosen exchange/pair before going "all-in".
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

@@ -51,6 +51,7 @@ The project was built and tested with Python 3.6.5. To install the required pack
 
 ```
 pip install -r requirements.txt
+# Only needed when you want to plot
 pip install https://github.com/matplotlib/mpl_finance/archive/master.zip
 ```
 
